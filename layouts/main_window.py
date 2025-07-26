@@ -1,10 +1,11 @@
 # main_window.py
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout
 from PySide6.QtCore import QFile
-from components.header import Header
-from components.sidebar import Sidebar
-from components.content import Content
 from config import globals
+
+from components.video_streamer import VideoStreamer
+from modules.video_engine import VideoEngine
+from components.image_extractor import ImageExtractor
 
 
 class MainWindow(QMainWindow):
@@ -12,25 +13,27 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle(globals.APP_TITLE)
         self.resize(globals.WINDOW_WIDTH, globals.WINDOW_HEIGHT)
-        self.init_ui()
-        self.load_global_styles()
 
-    def init_ui(self):
+        self.video_engine = VideoEngine()
+
         central_widget = QWidget()
         layout = QVBoxLayout()
 
-        self.header = Header()
-        self.sidebar = Sidebar()
-        self.content = Content()
+        # Left pane
+        left_widget = QWidget()
+        left_layout = QVBoxLayout(left_widget)
 
-        layout.addWidget(self.header)
-        layout.addWidget(self.sidebar)
-        layout.addWidget(self.content)
+        left_layout.addWidget(VideoStreamer(self.video_engine))
+
+        # Right pane
+        right_widget = QWidget()
+        right_layout = QVBoxLayout(right_widget)
+
+        right_layout.addWidget(ImageExtractor(self.video_engine))
 
         central_widget.setLayout(layout)
         self.setCentralWidget(central_widget)
 
-    def load_global_styles(self):
         file = QFile("resources/global.qss")
         if file.open(QFile.ReadOnly | QFile.Text):
             self.setStyleSheet(file.readAll().data().decode())

@@ -1,0 +1,33 @@
+info_table = QTableWidget(9, 1)
+        info_table.setVerticalHeaderLabels(
+            [
+                "Current Frame",
+                "Width",
+                "Height",
+                "FPS",
+                "Max Frames",
+                "Crop Top",
+                "Crop Bottom",
+                "Crop Left",
+                "Crop Right",
+            ]
+        )
+        info_table.horizontalHeader().setVisible(False)
+        info_table.setEditTriggers(QTableWidget.NoEditTriggers)
+
+        info_table.setItem(0, 0, QTableWidgetItem(str(self.video.getPos())))
+        info_table.setItem(1, 0, QTableWidgetItem(str(self.video.width)))
+        info_table.setItem(2, 0, QTableWidgetItem(str(self.video.height)))
+        info_table.setItem(3, 0, QTableWidgetItem(str(self.video.fps)))
+        info_table.setItem(4, 0, QTableWidgetItem(str(self.video.max_frames)))
+        info_table.setItem(5, 0, QTableWidgetItem(str(self.video.crop_top)))
+        info_table.setItem(6, 0, QTableWidgetItem(str(self.video.crop_bottom)))
+        info_table.setItem(7, 0, QTableWidgetItem(str(self.video.crop_left)))
+        info_table.setItem(8, 0, QTableWidgetItem(str(self.video.crop_right)))
+
+        info_table.setStyleSheet(
+            "QTableWidget { background-color: #333; color: white; }"
+        )
+
+        self.info_table = info_table
+        left_layout.addWidget(self.info_table)
