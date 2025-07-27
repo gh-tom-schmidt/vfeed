@@ -30,11 +30,11 @@ It's designed to help create datasets for:
 
 ## 📷 Screenshots
 
-```md
 ![UI_1](images/readme_img_1.png)
+
 ![UI_2](images/readme_img_2.png)
+
 ![UI_2](images/readme_img_3.png)
-```
 
 ---
 
