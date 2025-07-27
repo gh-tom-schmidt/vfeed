@@ -136,6 +136,7 @@ class VideoEngine:
         # set the current position of the video reader when in bounds
         if 0 <= frame_number < self.max_frames:
             self.source.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
+            self.generateFrame()
 
     def getVideoReaderPosition(self) -> int:
         """
@@ -161,13 +162,11 @@ class VideoEngine:
         # check if the new position is within the bounds of the video
         if 0 <= new_pos < self.max_frames:
             self.setPos(new_pos)
+            self.generateFrame()
 
-    def getNextFrame(self) -> None | cv2.Mat:
+    def generateFrame(self) -> None:
         """
-        Gets the next frame from the video source.
-
-        Returns:
-            None | cv2.Mat: The next frame from the video source or None if there are no more frames.
+        Generates the frame from the video source.
         """
 
         # get the next frame from the video source
@@ -185,7 +184,15 @@ class VideoEngine:
 
         # save it as the active frame
         self.active_frame = frame[top:bottom, left:right]
-        # convert this from the opencv standard BGR to RGB before returning
+
+    def getFrame(self) -> None | cv2.Mat:
+        """
+        Returns  the current frame.
+
+        Returns:
+            cv2.Mat: The current active frame in RGB format, or None if no frame is available.
+        """
+
         return cv2.cvtColor(self.active_frame, cv2.COLOR_BGR2RGB)
 
     #
