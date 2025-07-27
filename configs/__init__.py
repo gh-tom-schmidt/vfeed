@@ -1,0 +1,1 @@
+from .globals import APP_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT

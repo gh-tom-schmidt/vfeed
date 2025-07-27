@@ -1,4 +1,15 @@
 from modules.video_engine import VideoEngine
+import time
+from PySide6.QtWidgets import (
+    QWidget,
+    QHBoxLayout,
+    QLabel,
+    QSlider,
+    QPushButton,
+    QSizePolicy,
+)
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QImage, QPixmap
 
 
 class VideoStreamer(QWidget):
@@ -13,7 +24,7 @@ class VideoStreamer(QWidget):
         play(): Toggles playback state between play and pause.
     """
 
-    def __init__(self, video_engine) -> None:
+    def __init__(self, video_engine: VideoEngine) -> None:
         """
         Define the layout for the video streamer component.
         Args:
@@ -27,12 +38,6 @@ class VideoStreamer(QWidget):
 
         layout = QHBoxLayout()
 
-        # File selector
-        self.open_button = QPushButton("Open Video")
-        self.open_button.setFixedSize(150, 40)
-        self.open_button.clicked.connect(self.fileSelector)
-        self.main_layout.addWidget(self.open_button, alignment=Qt.AlignCenter)
-
         # Video Frame
         self.video_display = QLabel("Video")
         self.video_display.setFixedHeight(600)
@@ -42,11 +47,17 @@ class VideoStreamer(QWidget):
         self.video_display.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.video_display)
 
+        # get the frame emitter to update the Video Frame
+        self.video_engine.emit_new_frame.connect(self.updateFrame)
+
         # Slider
         self.slider = QSlider(Qt.Horizontal)
         self.slider.setRange(0, 100)  # inital values
         self.slider.valueChanged.connect(self.slided)
         layout.addWidget(self.slider)
+
+        # get the current frame number for updating the slider form the video engine
+        self.video_engine.emit_new_frame_index.connect(self.slider.setValue)
 
         # ---------------- Control Buttons -----------------------
         self.control_layout = QHBoxLayout()
@@ -54,25 +65,25 @@ class VideoStreamer(QWidget):
         # change by -60 Frames
         bt_neg60 = QPushButton("-60")
         bt_neg60.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        bt_neg60.clicked.connect(self.changeFrame(-60))
+        bt_neg60.clicked.connect(lambda: self.changeFrame(-60))
         self.control_layout.addWidget(bt_neg60)
 
         # change by -30 Frames
         bt_neg30 = QPushButton("-30")
         bt_neg30.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        bt_neg30.clicked.connect(self.changeFrame(-30))
+        bt_neg30.clicked.connect(lambda: self.changeFrame(-30))
         self.control_layout.addWidget(bt_neg30)
 
         # change by -10 Frames
         bt_neg10 = QPushButton("-10")
         bt_neg10.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        bt_neg10.clicked.connect(self.changeFrame(-10))
+        bt_neg10.clicked.connect(lambda: self.changeFrame(-10))
         self.control_layout.addWidget(bt_neg10)
 
         # change by -1 Frame
         bt_neg1 = QPushButton("-1")
         bt_neg1.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        bt_neg1.clicked.connect(self.changeFrame(-1))
+        bt_neg1.clicked.connect(lambda: self.changeFrame(-1))
         self.control_layout.addWidget(bt_neg1)
 
         # the play / pause button
@@ -85,25 +96,25 @@ class VideoStreamer(QWidget):
         # change by +1 Frame
         bt_plus1 = QPushButton("+1")
         bt_plus1.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        bt_plus1.clicked.connect(self.changeFrame(1))
+        bt_plus1.clicked.connect(lambda: self.changeFrame(1))
         self.control_layout.addWidget(bt_plus1)
 
         # change by +10 Frames
         bt_plus10 = QPushButton("+10")
         bt_plus10.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        bt_plus10.clicked.connect(self.changeFrame(10))
+        bt_plus10.clicked.connect(lambda: self.changeFrame(10))
         self.control_layout.addWidget(bt_plus10)
 
         # change by +30 Frames
         bt_plus30 = QPushButton("+30")
         bt_plus30.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        bt_plus30.clicked.connect(self.changeFrame(30))
+        bt_plus30.clicked.connect(lambda: self.changeFrame(30))
         self.control_layout.addWidget(bt_plus30)
 
         # change by +60 Frames
         bt_plus60 = QPushButton("+60")
         bt_plus60.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        bt_plus60.clicked.connect(self.changeFrame(60))
+        bt_plus60.clicked.connect(lambda: self.changeFrame(60))
         self.control_layout.addWidget(bt_plus60)
 
         layout.addLayout(self.control_layout)
@@ -113,20 +124,6 @@ class VideoStreamer(QWidget):
     #
     # -------------------------------- FUNCTIONS --------------------------------------
     #
-
-    def fileSelector(self) -> None:
-        """
-        Opens a file dialog to select a video file and loads it into the video engine.
-        """
-
-        file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Select Video File",
-            "",
-            "Video Files (*.mp4 *.avi *.mov *.mkv);;All Files (*)",
-        )
-
-        self.video_engine.load(file_path)
 
     def changeFrame(self, delta: int) -> None:
         """
@@ -138,19 +135,10 @@ class VideoStreamer(QWidget):
         # set the video reader position
         self.video_engine.changeVideoReaderPosition(delta)
 
-        # update the frame
-        self.updateFrame()
-
-        # update the slider
-        self.slider.setValue(self.video_engine.getVideoReaderPosition())
-
-    def updateFrame(self) -> None:
+    def updateFrame(self, frame) -> None:
         """
         Update the frame in the video display.
         """
-
-        # get the current frame
-        frame = self.video_engine.getFrame()
 
         h, w, ch = frame.shape
         bytes_per_line = ch * w
@@ -194,7 +182,7 @@ class VideoStreamer(QWidget):
             # enable / disable the button
             widget.setEnabled(not state)
 
-    def play(self) -> None:
+    def stream(self) -> None:
         """
         Play / Pause the video.
         Args:
@@ -211,8 +199,7 @@ class VideoStreamer(QWidget):
             # change the text on the button
             button.setText("Pause")
 
-            self.video_engine.nextFrame()
-            self.updateFrame()
+            self.video_engine.generateFrame()
 
         # if it says: "Pause", stop  the video
         else:

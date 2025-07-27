@@ -1,8 +1,9 @@
 import cv2
 import os
+from PySide6.QtCore import QObject, Signal, Slot
 
 
-class VideoEngine:
+class VideoEngine(QObject):
     """
     This class provides the backend for video processing and control with OpenCV.
 
@@ -17,9 +18,16 @@ class VideoEngine:
         save(output_path): Save the current active frame to the specified output path.
     """
 
-    def __init__(self) -> None:
+    # emiters for UI update
+    emit_new_frame = Signal(object)
+    emit_new_frame_index = Signal(int)
+
+    def __init__(self, path: str) -> None:
         """
         Initializes the VideoEngine with default values.
+
+        Args:
+            path(str): Path to the video source
 
         Attributes:
             source (cv2.VideoCapture): The video source.
@@ -32,33 +40,9 @@ class VideoEngine:
             active_frame (cv2.Mat): The currently active frame from the video.
         """
 
-        self.source = None
-        self.file_name = None
+        super().__init__()
 
-        self.width = None
-        self.height = None
-        self.fps = None
-        self.max_frames = None
-
-        # this values are used to crop the video
-        self.crop_values = {
-            "left": 0,
-            "right": 0,
-            "top": 0,
-            "bottom": 0,
-        }
-
-        self.active_frame = None
-
-    def load(self, path: str) -> None:
-        """
-        Loads a video file and initializes the VideoEngine capture properties.
-
-        Args:
-            path (str): The path to the video file.
-
-        """
-
+        # Load the video
         # check if the file exists
         if not os.path.exists(path):
             raise ValueError(f"Video file does not exist: {path}")
@@ -68,17 +52,36 @@ class VideoEngine:
         if not self.source.isOpened():
             raise ValueError(f"Unable to open video file: {path}")
 
-        # set global properties
+        # set globals
         self.file_name = os.path.splitext(os.path.basename(path))[0]
         self.width = int(self.source.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.height = int(self.source.get(cv2.CAP_PROP_FRAME_HEIGHT))
         self.fps = self.source.get(cv2.CAP_PROP_FPS)
         self.max_frames = int(self.source.get(cv2.CAP_PROP_FRAME_COUNT))
+        self.active_frame = None
+
+        # this values are used to crop the video
+        self.crop_values = {
+            "left": 0,
+            "right": 0,
+            "top": 0,
+            "bottom": 0,
+        }
+
+    @Slot()
+    def stop(self):
+        """
+        Cleanup if thread is closed
+        """
+
+        if self.source is not None:
+            self.source.release()
 
     #
     # ------------------------------- VIDEO EDITIONG -------------------------------
     #
 
+    @Slot(int, int, int, int)
     def updateCropValues(
         self, left: int = None, right: int = None, top: int = None, bottom: int = None
     ) -> None:
@@ -124,6 +127,7 @@ class VideoEngine:
 
     # caution: this slows down over time when playing a video, so use this only
     # for per-frame changes and not for playback
+    @Slot(int)
     def setVideoReaderPosition(self, frame_number: int) -> None:
         """
         Update the current position of the video reader.
@@ -147,6 +151,7 @@ class VideoEngine:
         """
         return int(self.source.get(cv2.CAP_PROP_POS_FRAMES))
 
+    @Slot(int)
     def changeVideoReaderPosition(self, delta: int) -> None:
         """
         Update the current position of the video reader by a delta value.
@@ -158,12 +163,13 @@ class VideoEngine:
 
         # set the new position of the video reader
         # the -1 is compensate the +1 from opencv.read()
-        new_pos = self.getPos() + delta - 1
+        new_pos = self.getVideoReaderPosition() + delta - 1
         # check if the new position is within the bounds of the video
         if 0 <= new_pos < self.max_frames:
             self.setPos(new_pos)
             self.generateFrame()
 
+    @Slot()
     def generateFrame(self) -> None:
         """
         Generates the frame from the video source.
@@ -185,6 +191,10 @@ class VideoEngine:
         # save it as the active frame
         self.active_frame = frame[top:bottom, left:right]
 
+        # emit frame
+        self.emit_new_frame.emit(self.active_frame)
+        self.emit_new_frame_index.emit(self.getVideoReaderPosition())
+
     def getFrame(self) -> None | cv2.Mat:
         """
         Returns  the current frame.
@@ -199,6 +209,7 @@ class VideoEngine:
     # ------------------------------------ MISC -----------------------------------
     #
 
+    @Slot(str)
     def save(self, output_path: str):
         """
         Save the current active frame to the specified output path.

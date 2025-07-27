@@ -1,7 +1,6 @@
 from PySide6.QtWidgets import QTableWidget, QTableWidgetItem
-from PySide6.QtCore import Qt
 
-from components.video_engine import VideoEngine
+from modules.video_engine import VideoEngine
 
 
 class VideoInfoTable(QTableWidget):
@@ -38,18 +37,22 @@ class VideoInfoTable(QTableWidget):
         self.setEditTriggers(QTableWidget.NoEditTriggers)
         self.setStyleSheet("QTableWidget { background-color: #333; color: white; }")
 
-        self.update_info(video_engine)
+        # get the current frame number for updating the slider form the video engine
+        self.video_engine.emit_new_frame_index.connect(self.update_info)
 
-    def update_info(self) -> None:
+        self.update_info()
+
+    def update_info(self, current_frame_number: int = 0) -> None:
         """
         Updates the table with the current video information.
+
+        Args:
+            current_frame_number (int): The current frame number.
         """
 
         croped_values = self.video_engine.getCropValues()
 
-        self.setItem(
-            0, 0, QTableWidgetItem(str(self.video_engine.getVideoReaderPosition()))
-        )
+        self.setItem(0, 0, QTableWidgetItem(str(current_frame_number)))
         self.setItem(1, 0, QTableWidgetItem(str(self.video_engine.width)))
         self.setItem(2, 0, QTableWidgetItem(str(self.video_engine.height)))
         self.setItem(3, 0, QTableWidgetItem(str(self.video_engine.fps)))
