@@ -9,46 +9,58 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QFileDialog,
     QSizePolicy,
-    QSplitter,
+    QDialog,
 )
 from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtCore import QSize, Qt
 
+from modules.video_engine import VideoEngine
 
-class OutputViewerTab(QWidget):
-    def __init__(self, video=None, parent=None):
+
+class ImageExtractor(QWidget):
+    """ImageExtractor component to manage image extraction from video frames.
+
+    Methods:
+        select_output_folder(): Opens a dialog to select the output folder for images.
+        load_output_images(): Loads images from the selected output folder into the list.
+        save(): Saves the current active frame as an image in the selected output folder.
+        show_full_image(item): Displays the full image in a dialog when an item is clicked.
+    """
+
+    def __init__(self, video_engine: VideoEngine, parent=None) -> None:
+        """
+        Set up the layout
+        Args:
+            video_engine (VideoEngine): The video engine instance to interact with video frames.
+            parent: Parent widget for this component.
+        """
+
         super().__init__(parent)
-        self.video = video
+
+        self.video_engine = video_engine
         self.output_path = ""
 
         self.main_layout = QVBoxLayout(self)
-        self.setup_ui()
 
-    def setup_ui(self):
-        # LEFT SIDE (can be used for future controls)
-        self.left_widget = QWidget()
-        self.left_layout = QVBoxLayout(self.left_widget)
+        top_bar = QHBoxLayout()
 
         # Save button
         bt_save = QPushButton("Save")
         bt_save.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         bt_save.clicked.connect(self.save)
-        self.left_layout.addWidget(bt_save)
-        self.left_layout.addStretch()
-
-        # RIGHT SIDE (path + image list)
-        self.right_widget = QWidget()
-        self.right_layout = QVBoxLayout(self.right_widget)
+        top_bar.addWidget(bt_save)
 
         # Output path selector
-        path_layout = QHBoxLayout()
-        self.output_path_label = QLabel("No folder selected")
-        self.output_path_label.setStyleSheet("color: white")
         select_folder_btn = QPushButton("Select Output Folder")
         select_folder_btn.clicked.connect(self.select_output_folder)
-        path_layout.addWidget(select_folder_btn)
-        path_layout.addWidget(self.output_path_label)
-        self.right_layout.addLayout(path_layout)
+        select_folder_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        top_bar.addWidget(select_folder_btn)
+
+        self.output_path_label = QLabel("No folder selected")
+        self.output_path_label.setStyleSheet("color: white")
+        top_bar.addWidget(self.output_path_label)
+
+        self.main_layout.addLayout(top_bar)
 
         # Image list
         self.image_list = QListWidget()
@@ -57,47 +69,85 @@ class OutputViewerTab(QWidget):
         self.image_list.setResizeMode(QListWidget.Adjust)
         self.image_list.setSpacing(10)
         self.image_list.itemClicked.connect(self.show_full_image)
-        self.right_layout.addWidget(self.image_list)
+        self.main_layout.addWidget(self.image_list)
 
-    def show_full_image(self, item):
-        full_path = item.data(Qt.UserRole)
-        pixmap = QPixmap(full_path)
+        self.setLayout(self.main_layout)
 
-        dialog = QLabel()
-        dialog.setWindowTitle(item.text())
-        dialog.setPixmap(pixmap.scaledToWidth(800, Qt.SmoothTransformation))
-        dialog.setMinimumSize(820, 600)
-        dialog.setStyleSheet("background-color: black")
-        dialog.setWindowFlags(Qt.Window)
-        dialog.show()
-
-    def load_output_images(self):
-        self.image_list.clear()
-        if not self.output_path or not os.path.exists(self.output_path):
-            return
-
-        for filename in os.listdir(self.output_path):
-            if filename.lower().endswith((".png", ".jpg", ".jpeg")):
-                full_path = os.path.join(self.output_path, filename)
-                pixmap = QPixmap(full_path)
-                if not pixmap.isNull():
-                    icon = QIcon(
-                        pixmap.scaled(
-                            100, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation
-                        )
-                    )
-                    item = QListWidgetItem(icon, filename)
-                    item.setData(Qt.UserRole, full_path)
-                    self.image_list.addItem(item)
+    # ---------------------------- FUNCTIONS ------------------------------------
 
     def select_output_folder(self):
+        """
+        Opens a dialog to select the output folder for images
+        and loads existing images
+        """
+
         folder = QFileDialog.getExistingDirectory(self, "Select Output Folder")
         if folder:
             self.output_path = folder
             self.output_path_label.setText(folder)
             self.load_output_images()
 
+    def load_output_images(self):
+        """
+        Loads images from the selected output folder into the list widget.
+        """
+
+        # clear the current list
+        self.image_list.clear()
+
+        if not self.output_path or not os.path.exists(self.output_path):
+            return
+
+        # for each file that is an image
+        for filename in os.listdir(self.output_path):
+            if filename.lower().endswith((".png", ".jpg", ".jpeg")):
+                full_path = os.path.join(self.output_path, filename)
+
+                # create an icon from that image and add it to the list
+                icon = QIcon(
+                    QPixmap(full_path).scaled(
+                        100, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation
+                    )
+                )
+                item = QListWidgetItem(icon, filename)
+                item.setData(Qt.UserRole, full_path)
+                self.image_list.addItem(item)
+
     def save(self):
-        if self.video and self.output_path:
-            self.video.save(self.output_path)
+        """
+        Saves the frame to the selected output folder.
+        """
+
+        if self.output_path:
+            self.video_engine.save(self.output_path)
+            # update the list
             self.load_output_images()
+
+    def show_full_image(self, item):
+        """
+        Displays the full image in a dialog when an item is clicked.
+
+        Args:
+            item (QListWidgetItem): The item clicked in the list.
+        """
+
+        full_path = item.data(Qt.UserRole)
+        pixmap = QPixmap(full_path)
+
+        # create the dialog
+        dialog = QDialog(self)
+        dialog.setWindowTitle(item.text())
+        dialog.setMinimumSize(820, 600)
+        dialog.setStyleSheet("background-color: black;")
+
+        # image label
+        image_label = QLabel()
+        image_label.setPixmap(pixmap.scaledToWidth(800, Qt.SmoothTransformation))
+        image_label.setAlignment(Qt.AlignCenter)
+
+        # layout
+        layout = QVBoxLayout()
+        layout.addWidget(image_label)
+        dialog.setLayout(layout)
+
+        dialog.exec()

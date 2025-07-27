@@ -6,12 +6,15 @@ from PySide6.QtWidgets import (
     QPushButton,
     QFileDialog,
     QSplitter,
+    QTabWidget,
+    QLabel,
 )
 from PySide6.QtCore import QFile, Qt, QThread
 from configs import globals
 
 from components.video_streamer import VideoStreamer
 from components.info_table import VideoInfoTable
+from components.image_extractor import ImageExtractor
 from modules.video_engine import VideoEngine
 
 
@@ -95,24 +98,24 @@ class MainWindow(QMainWindow):
         right_widget = QWidget()
         right_layout = QVBoxLayout(right_widget)
 
-        # # add a tabbar
-        # tab_widget = QTabWidget()
+        # add a tabbar
+        tab_widget = QTabWidget()
 
-        # # First tab
+        # First tab
         # tab1 = QWidget()
         # tab1.setLayout(VideoEditor())
 
-        # # Second tab
-        # tab2 = QWidget()
-        # layout2 = QVBoxLayout()
-        # layout2.addWidget(QLabel("This is the second tab"))
-        # tab2.setLayout(VideoExtractor())
+        # Second tab
+        tab2 = QWidget()
+        layout2 = QVBoxLayout()
+        layout2.addWidget(ImageExtractor(self.video_engine))
+        tab2.setLayout(layout2)
 
-        # # Add tabs
+        # Add tabs
         # tab_widget.addTab(tab1, "Video Editor")
-        # tab_widget.addTab(tab2, "Video Extractor")
+        tab_widget.addTab(tab2, "Video Extractor")
 
-        # right_layout.addWidget(tab_widget)
+        right_layout.addWidget(tab_widget)
 
         # ------------ Vertical Split screen -------------------
         splitter = QSplitter(Qt.Horizontal)

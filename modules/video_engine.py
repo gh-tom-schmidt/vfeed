@@ -268,6 +268,9 @@ class VideoEngine(QObject):
         if not os.path.exists(output_path):
             raise ValueError(f"Output path does not exist: {output_path}")
         cv2.imwrite(
-            os.path.join(output_path, f"{self.source_name}_Frame-{self.getPos()}.jpg"),
-            cv2.cvtColor(self.active_frame, cv2.COLOR_RGB2BGR),
+            os.path.join(
+                output_path,
+                f"{self.file_name}_Frame-{self.getVideoReaderPosition()}.jpg",
+            ),
+            self.active_frame,
         )
