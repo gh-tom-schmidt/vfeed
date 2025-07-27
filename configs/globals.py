@@ -1,4 +1,2 @@
-APP_TITLE = "My PySide6 App"
-WINDOW_WIDTH = 800
-WINDOW_HEIGHT = 600
+APP_TITLE = "VFeed - Video Frame Extraction and Editing for Deep-learning"
 SLIDER_UPDATE_INTERVAL = 0.1  # seconds

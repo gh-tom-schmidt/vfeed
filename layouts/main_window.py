@@ -23,7 +23,6 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle(globals.APP_TITLE)
-        self.resize(globals.WINDOW_WIDTH, globals.WINDOW_HEIGHT)
 
         # create the main widget
         self.central_widget = QWidget()
@@ -92,7 +91,11 @@ class MainWindow(QMainWindow):
         self.video_info_table = VideoInfoTable(self.video_engine)
         left_splitter.addWidget(self.video_info_table)
 
-        left_splitter.setSizes([3, 1])
+        # emit the first frame after video streamer layout is built
+        self.video_engine_thread.started.connect(self.video_engine.initialize)
+        # start the video engine thread after the layout is built
+        self.video_engine_thread.start()
+
         self.main_layout.addWidget(left_splitter)
 
         # --------- Rigth Tab Bar --------
@@ -124,10 +127,9 @@ class MainWindow(QMainWindow):
         splitter = QSplitter(Qt.Horizontal)
         splitter.addWidget(left_splitter)
         splitter.addWidget(right_widget)
-        splitter.setSizes([2, 1])
         self.main_layout.addWidget(splitter)
 
-        # emit the first frame after the layout is built
-        self.video_engine_thread.started.connect(self.video_engine.initialize)
-        # start the video engine thread after the layout is built
-        self.video_engine_thread.start()
+        # Caution: the size of the spliter should be set when the
+        # layout is built otherwise it will not work correctly
+        splitter.setSizes([2, 1])
+        left_splitter.setSizes([3, 1])
