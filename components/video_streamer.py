@@ -55,7 +55,7 @@ class VideoStreamer(QWidget):
         # Slider
         self.slider = QSlider(Qt.Horizontal)
         self.slider.setRange(0, self.video_engine.max_frames)
-        self.slider.valueChanged.connect(self.slided)
+        self.slider.sliderReleased.connect(self.slided)
         layout.addWidget(self.slider)
 
         # initialize the slider update interval
@@ -162,22 +162,29 @@ class VideoStreamer(QWidget):
             )
         )
 
-    def slided(self, value: int) -> None:
+    def slided(self) -> None:
         """
         Change the frame when the slider is moved.
-        Args:
-            value (int): The amount of change.
         """
 
+        # Note: For now the video is only updated when the slider
+        # is released, because it takes the opencv video reader
+        # to get the frame, because it always resets the whole
+        # video decoding proccess and starts over, so the longer
+        # the video goes the longer the time to get the frame takes
+        self.video_engine.setVideoReaderPosition(self.slider.value())
+
+        # ---------
         # only change the frame if the slider is down
         # so it not gets triggered by the video engine
         # when the slider is autmoatically updated
-        if self.slider.isSliderDown():
-            # set a time interval to avoid too many updates
-            now = time.time()
-            if now - self.last_slider_update >= SLIDER_UPDATE_INTERVAL:
-                self.last_slider_update = now
-                # self.video_engine.setVideoReaderPosition(value)
+        # if self.slider.isSliderDown():
+        #     # set a time interval to avoid too many updates
+        #     now = time.time()
+        #     if now - self.last_slider_update >= SLIDER_UPDATE_INTERVAL:
+        #         self.last_slider_update = now
+        #         print(value)
+        #         self.video_engine.setVideoReaderPosition(value)
 
     def lock(self, state: bool) -> None:
         """
