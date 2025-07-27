@@ -3,6 +3,7 @@ import time
 from PySide6.QtWidgets import (
     QWidget,
     QHBoxLayout,
+    QVBoxLayout,
     QLabel,
     QSlider,
     QPushButton,
@@ -10,6 +11,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QImage, QPixmap
+from configs.globals import SLIDER_UPDATE_INTERVAL
 
 
 class VideoStreamer(QWidget):
@@ -36,7 +38,7 @@ class VideoStreamer(QWidget):
         # hook the video engine
         self.video_engine = video_engine
 
-        layout = QHBoxLayout()
+        layout = QVBoxLayout()
 
         # Video Frame
         self.video_display = QLabel("Video")
@@ -52,9 +54,12 @@ class VideoStreamer(QWidget):
 
         # Slider
         self.slider = QSlider(Qt.Horizontal)
-        self.slider.setRange(0, 100)  # inital values
+        self.slider.setRange(0, self.video_engine.max_frames)
         self.slider.valueChanged.connect(self.slided)
         layout.addWidget(self.slider)
+
+        # initialize the slider update interval
+        self.last_slider_update = time.time()
 
         # get the current frame number for updating the slider form the video engine
         self.video_engine.emit_new_frame_index.connect(self.slider.setValue)
@@ -158,12 +163,15 @@ class VideoStreamer(QWidget):
             value (int): The amount of change.
         """
 
-        # set a time interval to avoid too many updates
-        now = time.time()
-        if now - self.last_slider_update >= self.slider_update_interval:
-            self.last_slider_update = now
-            self.video_engine.setVideoReaderPosition(value)
-            self.updateFrame()
+        # only change the frame if the slider is down
+        # so it not gets triggered by the video engine
+        # when the slider is autmoatically updated
+        if self.slider.isSliderDown():
+            # set a time interval to avoid too many updates
+            now = time.time()
+            if now - self.last_slider_update >= SLIDER_UPDATE_INTERVAL:
+                self.last_slider_update = now
+                # self.video_engine.setVideoReaderPosition(value)
 
     def lock(self, state: bool) -> None:
         """
@@ -173,7 +181,7 @@ class VideoStreamer(QWidget):
         """
 
         # get all buttons in the control_layout
-        for i in range(self.ontrol_layout.count()):
+        for i in range(self.control_layout.count()):
             widget = self.control_layout.itemAt(i).widget()
             # if the is the PlayButton
             if widget.objectName() == "PlayButton":
@@ -190,7 +198,7 @@ class VideoStreamer(QWidget):
         """
 
         # get the PlayButton
-        button = self.control_layout.itemAt(5).widget()  # Play button
+        button = self.control_layout.itemAt(4).widget()  # Play button
 
         # if it says: "Play", so the video is stopped
         if button.text() == "Play":
@@ -199,7 +207,7 @@ class VideoStreamer(QWidget):
             # change the text on the button
             button.setText("Pause")
 
-            self.video_engine.generateFrame()
+            self.video_engine.play(True)
 
         # if it says: "Pause", stop  the video
         else:
@@ -208,3 +216,5 @@ class VideoStreamer(QWidget):
 
             # set the button back to play
             button.setText("Play")
+
+            self.video_engine.play(False)

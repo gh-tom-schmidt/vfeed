@@ -1,6 +1,6 @@
 import cv2
 import os
-from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtCore import QObject, Signal, Slot, QTimer
 
 
 class VideoEngine(QObject):
@@ -68,10 +68,25 @@ class VideoEngine(QObject):
             "bottom": 0,
         }
 
+        # add a timer for the video playback
+        self.state_playing = False
+        self.timer = QTimer()
+        self.timer.timeout.connect(self._playStep)
+
     @Slot()
-    def stop(self):
+    def initialize(self) -> None:
         """
-        Cleanup if thread is closed
+        Initializes the video engine by generating the first frame.
+        This method is called when the video engine thread starts.
+        """
+
+        # generate the first frame
+        self.generateFrame()
+
+    @Slot()
+    def stop(self) -> None:
+        """
+        Cleanup if thread is closed.
         """
 
         if self.source is not None:
@@ -166,8 +181,7 @@ class VideoEngine(QObject):
         new_pos = self.getVideoReaderPosition() + delta - 1
         # check if the new position is within the bounds of the video
         if 0 <= new_pos < self.max_frames:
-            self.setPos(new_pos)
-            self.generateFrame()
+            self.setVideoReaderPosition(new_pos)
 
     @Slot()
     def generateFrame(self) -> None:
@@ -192,7 +206,7 @@ class VideoEngine(QObject):
         self.active_frame = frame[top:bottom, left:right]
 
         # emit frame
-        self.emit_new_frame.emit(self.active_frame)
+        self.emit_new_frame.emit(cv2.cvtColor(self.active_frame, cv2.COLOR_BGR2RGB))
         self.emit_new_frame_index.emit(self.getVideoReaderPosition())
 
     def getFrame(self) -> None | cv2.Mat:
@@ -204,6 +218,35 @@ class VideoEngine(QObject):
         """
 
         return cv2.cvtColor(self.active_frame, cv2.COLOR_BGR2RGB)
+
+    def play(self, state: bool) -> None:
+        """
+        Play or pause the video playback.
+
+        Args:
+            state (bool): True to play the video, False to pause it.
+        """
+
+        self.state_playing = state
+
+        if self.state_playing:
+            # Start playing based on fps (interval in ms)
+            interval = int(1000 / self.fps)
+            self.timer.start(interval)
+        else:
+            self.timer.stop()
+
+    def _playStep(self):
+        """
+        Helper function to play the video.
+        """
+
+        # called every frame interval
+        self.generateFrame()
+
+        # stop when video ends
+        if self.getVideoReaderPosition() >= self.max_frames:
+            self.play(False)
 
     #
     # ------------------------------------ MISC -----------------------------------

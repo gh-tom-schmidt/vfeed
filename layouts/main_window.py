@@ -67,11 +67,15 @@ class MainWindow(QMainWindow):
             "Video Files (*.mp4 *.avi *.mov *.mkv);;All Files (*)",
         )
 
+        # remove the open button from the layout
+        self.main_layout.removeWidget(self.open_button)
+        self.open_button.setParent(None)
+        self.open_button.deleteLater()
+
         # create a thread for the video engine
         self.video_engine_thread = QThread()
         self.video_engine = VideoEngine(file_path)
         self.video_engine.moveToThread(self.video_engine_thread)
-        self.video_engine_thread.start()
 
         # -------- left pane --------
         left_widget = QWidget()
@@ -114,3 +118,8 @@ class MainWindow(QMainWindow):
         splitter.addWidget(right_widget)
         splitter.setSizes([2, 1])
         self.main_layout.addWidget(splitter)
+
+        # emit the first frame after the layout is built
+        self.video_engine_thread.started.connect(self.video_engine.initialize)
+        # start the video engine thread after the layout is built
+        self.video_engine_thread.start()
