@@ -42,7 +42,7 @@ class VideoStreamer(QWidget):
 
         # Video Frame
         self.video_display = QLabel("Video")
-        self.video_display.setFixedHeight(600)
+        self.video_display.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.video_display.setStyleSheet(
             "background-color: #444; border: 1px solid #666;"
         )
@@ -129,6 +129,12 @@ class VideoStreamer(QWidget):
     #
     # -------------------------------- FUNCTIONS --------------------------------------
     #
+
+    def resizeEvent(self, event):
+        frame = self.video_engine.getFrame()
+        if frame is not None:
+            self.updateFrame(frame)
+        super().resizeEvent(event)
 
     def changeFrame(self, delta: int) -> None:
         """

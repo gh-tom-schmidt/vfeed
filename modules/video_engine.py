@@ -216,8 +216,10 @@ class VideoEngine(QObject):
         Returns:
             cv2.Mat: The current active frame in RGB format, or None if no frame is available.
         """
-
-        return cv2.cvtColor(self.active_frame, cv2.COLOR_BGR2RGB)
+        if self.active_frame is not None:
+            return cv2.cvtColor(self.active_frame, cv2.COLOR_BGR2RGB)
+        else:
+            return None
 
     def play(self, state: bool) -> None:
         """

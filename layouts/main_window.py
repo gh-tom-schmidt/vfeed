@@ -77,19 +77,21 @@ class MainWindow(QMainWindow):
         self.video_engine = VideoEngine(file_path)
         self.video_engine.moveToThread(self.video_engine_thread)
 
-        # -------- left pane --------
-        left_widget = QWidget()
-        left_layout = QVBoxLayout(left_widget)
+        # ---------------- Left Split screen ------------------
+        left_splitter = QSplitter(Qt.Vertical)
 
         # add a VideoStreamer component to the left pane
         self.video_streamer = VideoStreamer(self.video_engine)
-        left_layout.addWidget(self.video_streamer)
+        left_splitter.addWidget(self.video_streamer)
 
         # add a VideoInfoTable component to the left pane
         self.video_info_table = VideoInfoTable(self.video_engine)
-        left_layout.addWidget(self.video_info_table)
+        left_splitter.addWidget(self.video_info_table)
 
-        # --------- right pane --------
+        left_splitter.setSizes([3, 1])
+        self.main_layout.addWidget(left_splitter)
+
+        # --------- Rigth Tab Bar --------
         right_widget = QWidget()
         right_layout = QVBoxLayout(right_widget)
 
@@ -112,9 +114,9 @@ class MainWindow(QMainWindow):
 
         # right_layout.addWidget(tab_widget)
 
-        # ------------------ Split screen -------------------
+        # ------------ Vertical Split screen -------------------
         splitter = QSplitter(Qt.Horizontal)
-        splitter.addWidget(left_widget)
+        splitter.addWidget(left_splitter)
         splitter.addWidget(right_widget)
         splitter.setSizes([2, 1])
         self.main_layout.addWidget(splitter)
