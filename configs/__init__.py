@@ -1,1 +1,1 @@
-from .globals import APP_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT
+from .globals import APP_TITLE, SLIDER_UPDATE_INTERVAL
