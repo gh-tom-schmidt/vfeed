@@ -15,6 +15,7 @@ from configs import globals
 from components.video_streamer import VideoStreamer
 from components.info_table import VideoInfoTable
 from components.image_extractor import ImageExtractor
+from components.video_editor import VideoEditor
 from modules.video_engine import VideoEngine
 
 
@@ -101,18 +102,20 @@ class MainWindow(QMainWindow):
         # add a tabbar
         tab_widget = QTabWidget()
 
-        # First tab
-        # tab1 = QWidget()
-        # tab1.setLayout(VideoEditor())
+        # First tab for Video Editor
+        tab1 = QWidget()
+        layout1 = QVBoxLayout()
+        layout1.addWidget(VideoEditor(self.video_engine))
+        tab1.setLayout(layout1)
 
-        # Second tab
+        # Second tab for Image Extracotr
         tab2 = QWidget()
         layout2 = QVBoxLayout()
         layout2.addWidget(ImageExtractor(self.video_engine))
         tab2.setLayout(layout2)
 
         # Add tabs
-        # tab_widget.addTab(tab1, "Video Editor")
+        tab_widget.addTab(tab1, "Video Editor")
         tab_widget.addTab(tab2, "Video Extractor")
 
         right_layout.addWidget(tab_widget)

@@ -121,6 +121,10 @@ class VideoEngine(QObject):
         if bottom is not None:
             self.crop_values["bottom"] = bottom
 
+        # trigger the frame generator to apply the changes to the
+        # current frame
+        self.changeVideoReaderPosition(0)
+
     def getCropValues(self) -> tuple[int, int, int, int]:
         """
         Gets the current crop values for the video.
