@@ -82,3 +82,23 @@ I'm not primarily a GUI or app developer, so **feedback and suggestions are very
 
 * ✉️ Open an issue or discussion on GitHub
 * 🧠 Tips or feature ideas? Don’t hesitate to share!
+
+---
+
+### 🔒 License
+
+This project is licensed under the **GNU General Public License v3.0**.
+
+You are free to:
+
+* ✅ Use this software for **commercial** or **private** purposes
+* ✅ Modify and distribute the code
+* ✅ Access the source code
+
+But you **must**:
+
+* 🔁 Release your changes under the same license (**GPLv3**)
+* 📜 Include the original copyright
+* ❌ Not impose further restrictions
+
+> 📖 Read the full license in the LICENSE file
